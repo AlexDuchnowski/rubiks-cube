@@ -82,7 +82,64 @@ instance Rubiks2x2Group : Group VertexType := PieceGroup 8 3
 abbrev RubiksSuperType := VertexType × EdgeType
 instance RubiksSuperGroup : Group RubiksSuperType := Prod.instGroup
 
+def zeroOrient (p o : ℕ+) : Vector (Fin o) p  := Vector.replicate p 0
+
+def orientVector (p o : ℕ+) : List ((Fin p) × (Fin o)) → Vector (Fin o) p
+  | [] => zeroOrient p o
+  | (i, x) :: os => (orientVector p o os).set i x
+
 def solved : RubiksSuperType := 1
+
+section face_turns
+
+  private def cycle_impl {α : Type*} [DecidableEq α] : α → List α → Perm α
+    | _, [] => 1
+    | a, (x :: xs) => swap a x * cycle_impl x xs
+
+  private def cycle {α : Type*} [DecidableEq α] : List α → Perm α
+    | [] => 1
+    | (x :: xs) => cycle_impl x xs
+
+  -- #eval List.map (cycle [0, 1, 2, 3] : Perm (Fin 12)) (List.range 12)
+  -- #eval List.map (cycle [0, 5, 8] : Perm (Fin 12)) (List.range 12)
+
+  def U : RubiksSuperType :=
+    ⟨{permute := cycle [0, 1, 2, 3], orient := zeroOrient 8 3},
+    {permute := cycle [0, 1, 2, 3], orient := zeroOrient 12 2}⟩
+  def D : RubiksSuperType :=
+    ⟨{permute := cycle [4, 5, 6, 7], orient := zeroOrient 8 3},
+    {permute := cycle [4, 5, 6, 7], orient := zeroOrient 12 2}⟩
+  def R : RubiksSuperType :=
+    ⟨{permute := cycle [1, 6, 5, 2], orient := orientVector 8 3 [(1, 1), (6, 2), (5, 1), (2, 2)]},
+    {permute := cycle [1, 9, 5, 10], orient := zeroOrient 12 2}⟩
+  def L : RubiksSuperType :=
+    ⟨{permute := cycle [0, 3, 4, 7], orient := orientVector 8 3 [(0, 2), (3, 1), (4, 2), (7, 1)]},
+    {permute := cycle [3, 11, 7, 8], orient := zeroOrient 12 2}⟩
+  def F : RubiksSuperType :=
+    ⟨{permute := cycle [2, 5, 4, 3], orient := orientVector 8 3 [(2, 1), (5, 2), (4, 1), (3, 2)]},
+    {permute := cycle [2, 10, 4, 11], orient := orientVector 12 2 [(2, 1), (10, 1), (4, 1), (11, 1)]}⟩
+  def B : RubiksSuperType :=
+    ⟨{permute := cycle [0, 7, 6, 1], orient := orientVector 8 3 [(0, 1), (7, 2), (6, 1), (1, 2)]},
+    {permute := cycle [0, 8, 6, 9], orient := orientVector 12 2 [(0, 1), (8, 1), (6, 1), (9, 1)]}⟩
+  def U2 := U^2
+  def D2 := D^2
+  def R2 := R^2
+  def L2 := L^2
+  def F2 := F^2
+  def B2 := B^2
+  def U' := U⁻¹
+  def D' := D⁻¹
+  def R' := R⁻¹
+  def L' := L⁻¹
+  def F' := F⁻¹
+  def B' := B⁻¹
+
+  #check Multiplicative.coeToFun
+
+  -- instance : Multiplicative.coeToFun RubiksSuperType := {coe := fun (a : RubiksSuperType) => fun (b : RubiksSuperType) => a * b }
+  --? How do I get the line above to work?
+
+end face_turns
 
 section widget
 
@@ -224,6 +281,6 @@ def cubeStickerJson : RubiksSuperType → Json :=
     );
   }"
 
-#widget cubeWidget (cubeStickerJson solved)
-
 end widget
+
+#widget cubeWidget (cubeStickerJson (R * U * R' * U' * R' * F * R2 * U' * R' * U' * R * U * R' * F'))
