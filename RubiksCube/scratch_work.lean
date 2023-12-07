@@ -48,6 +48,7 @@ def permuteVector {α : Type} {n : ℕ} : Perm (Fin n) → Vector α n → Vecto
 #eval v
 #eval permuteVector moveRightPerm v
 #eval moveRightPerm 1
+#eval moveRightPerm⁻¹ 1
 -- #eval v2.map swapFLPerm -- not what I wanted
 
-#eval (0 : Fin 1)
+#eval ([-1, -2, -3, -4, -0] : List (Fin 5))
