@@ -12,14 +12,14 @@ def permuteVector {α : Type} {n : ℕ} : Perm (Fin n) → Vector α n → Vecto
     property := by simp
   }
 
-structure PieceState (pieces orientations: ℕ+) :=
-  (permute : Perm (Fin pieces))
-  (orient : Fin pieces → Fin orientations)
+structure PieceState (pieces orientations: ℕ+) where
+  permute : Perm (Fin pieces)
+  orient : Fin pieces → Fin orientations
 
 def ps_mul {p o : ℕ+} : PieceState p o → PieceState p o → PieceState p o :=
   fun a b => {
     permute := b.permute * a.permute
-    orient := (fun x => a.orient (b.permute.invFun x)) + b.orient
+    orient := (a.orient ∘ b.permute.invFun) + b.orient
   }
 
 -- variable {p o : ℕ+}
@@ -37,10 +37,6 @@ lemma ps_mul_assoc {p o : ℕ+} : ∀ (a b c : PieceState p o), ps_mul (ps_mul a
 lemma ps_one_mul {p o : ℕ+} : ∀ (a : PieceState p o), ps_mul {permute := 1, orient := 0} a = a := by
   intro a
   simp [ps_mul]
-  cases a with
-  | mk a.permute a.orient =>
-    simp
-    apply Eq.refl
 
 lemma ps_mul_one {p o : ℕ+} : ∀ (a : PieceState p o), ps_mul a {permute := 1, orient := 0} = a := by
   intro a
@@ -139,6 +135,26 @@ section FACE_TURNS
 
   #check Multiplicative.coeToFun
 
+  inductive FaceTurn : RubiksSuperType → Prop where
+    | U : FaceTurn U
+    | D : FaceTurn D
+    | R : FaceTurn R
+    | L : FaceTurn L
+    | F : FaceTurn F
+    | B : FaceTurn B
+    | U2 : FaceTurn U2
+    | D2 : FaceTurn D2
+    | R2 : FaceTurn R2
+    | L2 : FaceTurn L2
+    | F2 : FaceTurn F2
+    | B2 : FaceTurn B2
+    | U' : FaceTurn U'
+    | D' : FaceTurn D'
+    | R' : FaceTurn R'
+    | L' : FaceTurn L'
+    | F' : FaceTurn F'
+    | B' : FaceTurn B'
+
   -- instance : Multiplicative.coeToFun RubiksSuperType := {coe := fun (a : RubiksSuperType) => fun (b : RubiksSuperType) => a * b }
   --? How do I get the line above to work?
 
@@ -153,18 +169,30 @@ def EdgeFlip : RubiksSuperType := ({permute := 1, orient := 0}, {permute := 1, o
 
 section RubiksGroup
 
-def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Fin.foldl 8 (fun acc n => acc + c.fst.orient n) 0 = 0 ∧ Fin.foldl 12 (fun acc n => acc + c.snd.orient n) 0 = 0}
+-- def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Fin.foldl 8 (fun acc n => acc + c.fst.orient n) 0 = 0 ∧ Fin.foldl 12 (fun acc n => acc + c.snd.orient n) 0 = 0}
+def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Finset.sum ({0,1,2,3,4,5,6,7} : Finset (Fin 8)) c.fst.orient = 0 ∧ Finset.sum ({0,1,2,3,4,5,6,7,8,9,10,11} : Finset (Fin 12)) c.snd.orient = 0}
+
+#check Finset.sum
+#check Finset (Fin 8)
+#check ({0,1,2,3,4,5,6,7} : Finset (Fin 8))
+
+-- set_option trace.aesop true
 
 lemma mul_mem' {a b : RubiksSuperType} : a ∈ ValidCube → b ∈ ValidCube → a * b ∈ ValidCube := by
   intro hav hbv
   simp [ValidCube, PieceState.mul_def, ps_mul]
   repeat' apply And.intro
-  aesop
-  { have h1 : sign fst.permute = sign snd.permute := by apply hav.left
-    have h2 : sign fst_1.permute = sign snd_1.permute := by apply hbv.left
+  { have h1 : sign a.1.permute = sign a.2.permute := by apply hav.left
+    have h2 : sign b.1.permute = sign b.2.permute := by apply hbv.left
     simp [h1, h2] }
+  { have h1 : Finset.sum {0, 1, 2, 3, 4, 5, 6, 7} a.1.orient = 0 := by apply hav.right.left
+    have h2 : Finset.sum {0, 1, 2, 3, 4, 5, 6, 7} b.1.orient = 0 := by apply hbv.right.left
+    -- rw [PieceState.orient, PieceState.orient]
+    rw [Finset.sum_add_distrib, h2]
+    sorry }
   { sorry }
-  { sorry }
+
+#check Finset.sum_add_distrib
 
 lemma one_mem' : 1 ∈ ValidCube := by
     simp [ValidCube]
@@ -177,7 +205,10 @@ lemma one_mem' : 1 ∈ ValidCube := by
 lemma inv_mem' {x : RubiksSuperType} : x ∈ ValidCube → x⁻¹ ∈ ValidCube := by
   intro hxv
   simp [ValidCube, PieceState.inv_def, ps_inv]
-  sorry
+  repeat' apply And.intro
+  { apply hxv.left }
+  { sorry }
+  { sorry }
 
 instance RubiksGroup : Subgroup RubiksSuperType := {
   carrier := ValidCube
@@ -186,27 +217,18 @@ instance RubiksGroup : Subgroup RubiksSuperType := {
   inv_mem' := inv_mem'
 }
 
+#check RubiksGroup.mul_mem'
+
 inductive Reachable : RubiksSuperType → Prop where
-  | U : Reachable U
-  | D : Reachable D
-  | R : Reachable R
-  | L : Reachable L
-  | F : Reachable F
-  | B : Reachable B
-  -- | U2 : Reachable U2
-  -- | D2 : Reachable D2
-  -- | R2 : Reachable R2
-  -- | L2 : Reachable L2
-  -- | F2 : Reachable F2
-  -- | B2 : Reachable B2
-  -- | U' : Reachable U'
-  -- | D' : Reachable D'
-  -- | R' : Reachable R'
-  -- | L' : Reachable L'
-  -- | F' : Reachable F'
-  -- | B' : Reachable B'
-  | mul : ∀x
-  y : RubiksSuperType, Reachable x → Reachable y → Reachable (x * y)
+  | Solved : Reachable Solved
+  | FT : ∀x : RubiksSuperType, FaceTurn x → Reachable x
+  -- | U : Reachable U
+  -- | D : Reachable D
+  -- | R : Reachable R
+  -- | L : Reachable L
+  -- | F : Reachable F
+  -- | B : Reachable B
+  | mul : ∀x y : RubiksSuperType, Reachable x → Reachable y → Reachable (x * y)
 
 end RubiksGroup
 
@@ -225,6 +247,8 @@ section ValidityChecks
 lemma CornerTwistInvalid : CornerTwist ∉ ValidCube :=
   by
     simp [CornerTwist, ValidCube]
+    intro h
+    -- have h2 : ∀x ∈ ({0,1,2,3,4,5,6,7} : Set (Fin 8)), (fun | 0 => 1 | _ => 0) x = 0 := Finset.sum_eq_zero_iff.mp h
     sorry
 
 lemma EdgeFlipInvalid : EdgeFlip ∉ ValidCube :=
