@@ -6,26 +6,28 @@ open Equiv Perm
 
 section RubiksSuperGroup
 
+instance (n : Nat) : Repr (Perm (Fin n)) :=
+  ⟨reprPrec ∘ Equiv.toFun⟩
+
+instance (n m : Nat) : Repr (Vector (Fin n) m) :=
+  ⟨reprPrec ∘ Vector.toList⟩
+
 def permuteVector {α : Type} {n : ℕ} : Perm (Fin n) → Vector α n → Vector α n :=
   fun p v => {
     val := (Vector.ofFn (fun i => v.get (p.invFun i))).toList
     property := by simp
   }
 
-structure PieceState (pieces orientations: ℕ+) :=
-  (permute : Perm (Fin pieces))
-  (orient : Vector (Fin orientations) pieces)
+structure PieceState (pieces orientations: ℕ+) where
+  permute : Perm (Fin pieces)
+  orient : Vector (Fin orientations) pieces
+  deriving Repr
 
 def ps_mul {p o : ℕ+} : PieceState p o → PieceState p o → PieceState p o :=
   fun a b => {
     permute := b.permute * a.permute
     orient := Vector.map₂ Fin.add (permuteVector b.permute a.orient) b.orient
   }
-
--- variable {p o : ℕ+}
-
--- instance: Mul (PieceState p o) := mul
---? How can I deFine multiplication, one, and inverses as implicit components of the PieceState type?
 
 lemma ps_mul_assoc {p o : ℕ+} : ∀ (a b c : PieceState p o), ps_mul (ps_mul a b) c = ps_mul a (ps_mul b  c) := by
   intro a b c
@@ -102,9 +104,6 @@ section FACE_TURNS
     | [] => 1
     | (x :: xs) => cycleImpl x xs
 
-  -- #eval List.map (cycle [0, 1, 2, 3] : Perm (Fin 12)) (List.range 12)
-  -- #eval List.map (cycle [0, 5, 8] : Perm (Fin 12)) (List.range 12)
-
   def U : RubiksSuperType :=
     ⟨{permute := cyclePieces [0, 1, 2, 3], orient := zeroOrient 8 3},
     {permute := cyclePieces [0, 1, 2, 3], orient := zeroOrient 12 2}⟩
@@ -136,10 +135,25 @@ section FACE_TURNS
   def F' := F⁻¹
   def B' := B⁻¹
 
-  #check Multiplicative.coeToFun
-
-  -- instance : Multiplicative.coeToFun RubiksSuperType := {coe := fun (a : RubiksSuperType) => fun (b : RubiksSuperType) => a * b }
-  --? How do I get the line above to work?
+  inductive FaceTurn : RubiksSuperType → Prop where
+    | U : FaceTurn U
+    | D : FaceTurn D
+    | R : FaceTurn R
+    | L : FaceTurn L
+    | F : FaceTurn F
+    | B : FaceTurn B
+    | U2 : FaceTurn U2
+    | D2 : FaceTurn D2
+    | R2 : FaceTurn R2
+    | L2 : FaceTurn L2
+    | F2 : FaceTurn F2
+    | B2 : FaceTurn B2
+    | U' : FaceTurn U'
+    | D' : FaceTurn D'
+    | R' : FaceTurn R'
+    | L' : FaceTurn L'
+    | F' : FaceTurn F'
+    | B' : FaceTurn B'
 
 end FACE_TURNS
 
@@ -186,52 +200,11 @@ instance RubiksGroup : Subgroup RubiksSuperType := {
 }
 
 inductive Reachable : RubiksSuperType → Prop where
-  | U : Reachable U
-  | D : Reachable D
-  | R : Reachable R
-  | L : Reachable L
-  | F : Reachable F
-  | B : Reachable B
-  -- | U2 : Reachable U2
-  -- | D2 : Reachable D2
-  -- | R2 : Reachable R2
-  -- | L2 : Reachable L2
-  -- | F2 : Reachable F2
-  -- | B2 : Reachable B2
-  -- | U' : Reachable U'
-  -- | D' : Reachable D'
-  -- | R' : Reachable R'
-  -- | L' : Reachable L'
-  -- | F' : Reachable F'
-  -- | B' : Reachable B'
-  | mul : ∀x
-  y : RubiksSuperType, Reachable x → Reachable y → Reachable (x * y)
+  | Solved : Reachable Solved
+  | FT : ∀x : RubiksSuperType, FaceTurn x → Reachable x
+  | mul : ∀x y : RubiksSuperType, Reachable x → Reachable y → Reachable (x * y)
 
 end RubiksGroup
-
-section ValidityChecks
-
--- lemma RValid : R ∈ ValidCube :=
---   by
---     simp [R, ValidCube]
---     aesop
-
--- lemma TPermValid : TPerm ∈ ValidCube :=
---   by
---     simp [TPerm, R, U, R', U', F, F', R2, ValidCube]
---     sorry
-
-lemma CornerTwistInvalid : CornerTwist ∉ ValidCube :=
-  by
-    simp [CornerTwist, ValidCube, zeroOrient, Vector.toList, Vector.replicate, Vector.set, List.set]
-    exact (bne_iff_ne 3 1).mp (by rfl)
-
-lemma EdgeFlipInvalid : EdgeFlip ∉ ValidCube :=
-  by
-    simp [EdgeFlip, ValidCube, zeroOrient, Vector.toList, Vector.replicate, Vector.set, List.set]
-    exact (bne_iff_ne 2 1).mp (by rfl)
-
-end ValidityChecks
 
 section WIDGET
 
@@ -289,8 +262,6 @@ open Lean Widget
 
 def L8x3 : List (ℕ × ℕ) := (List.map (fun x => (x, 0)) (List.range 8)) ++ (List.map (fun x => (x, 1)) (List.range 8)) ++ (List.map (fun x => (x, 2)) (List.range 8))
 def L12x2 : List (ℕ × ℕ) := (List.map (fun x => (x, 0)) (List.range 12)) ++ (List.map (fun x => (x, 1)) (List.range 12))
-
-#check Json.str
 
 def cubeStickerJson : RubiksSuperType → Json :=
   fun cube => Json.mkObj
@@ -380,3 +351,19 @@ end WIDGET
 #widget cubeWidget (cubeStickerJson AlteredYPerm)
 #widget cubeWidget (cubeStickerJson CornerTwist)
 #widget cubeWidget (cubeStickerJson EdgeFlip)
+
+section SolutionState
+
+def CornersSolved : RubiksSuperType → Prop :=
+  fun c => c.fst.permute = 1 ∧ c.fst.orient = zeroOrient 8 3
+
+def EdgesSolved : RubiksSuperType → Prop :=
+  fun c => c.snd.permute = 1 ∧ c.snd.orient = zeroOrient 12 2
+
+def IsSolved : RubiksSuperType → Prop := fun c => CornersSolved c ∧ EdgesSolved c
+
+instance {c} : Decidable (CornersSolved c) := by apply And.decidable
+instance {c} : Decidable (EdgesSolved c) := by apply And.decidable
+instance {c} : Decidable (IsSolved c) := by apply And.decidable
+
+end SolutionState
