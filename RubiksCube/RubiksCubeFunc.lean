@@ -12,6 +12,7 @@ instance (n : Nat) : Repr (Perm (Fin n)) :=
 instance (n : Nat) : DecidableEq (Perm (Fin n)) :=
   λ a b => mk.injEq a.toFun a.invFun _ _ b.toFun b.invFun _ _ ▸ inferInstance
 
+/- This PieceState structure is used to represent the entire state of both corner pieces and edge pieces.-/
 structure PieceState (pieces orientations: ℕ+) where
   permute : Perm (Fin pieces)
   orient : Fin pieces → Fin orientations
@@ -51,6 +52,7 @@ lemma ps_mul_left_inv {p o : ℕ+} : ∀ (a : PieceState p o), ps_mul (ps_inv a)
   simp [ps_inv, ps_mul]
   sorry
 
+/- This sets up a group structure for all Rubik's cube positions (including invalid ones that couldn't be reached from a solved state without removing pieces from the cube, twisting corners, etc.). -/
 instance PieceGroup (pieces orientations: ℕ+) :
 Group (PieceState pieces orientations) := {
   mul := ps_mul
@@ -76,9 +78,10 @@ instance RubiksSuperGroup : Group RubiksSuperType := Prod.instGroup
 
 end RubiksSuperGroup
 
-def Orient (p o : ℕ+) : List ((Fin p) × (Fin o)) → Fin p → Fin o :=
-  fun l i =>
-    match l.lookup i with
+/- Creates an orientation function given a list of input-output pairs (with 0 for anything left unspecified). -/
+def Orient (p o : ℕ+) (pairs : List ((Fin p) × (Fin o))) : Fin p → Fin o :=
+  fun i =>
+    match pairs.lookup i with
     | some x => x
     | none => 0
 
@@ -86,6 +89,7 @@ def Solved : RubiksSuperType := 1
 
 section FACE_TURNS
 
+  /- These two functions (from kendfrey's repository) create a cycle permutation, which is useful for defining the rotation of any given face, as seen directly below. -/
   def cycleImpl {α : Type*} [DecidableEq α] : α → List α → Perm α
     | _, [] => 1
     | a, (x :: xs) => swap a x * cycleImpl x xs
@@ -209,10 +213,10 @@ lemma mul_mem' {a b : RubiksSuperType} : a ∈ ValidCube → b ∈ ValidCube →
 lemma one_mem' : 1 ∈ ValidCube := by
     simp [ValidCube]
     apply And.intro
-    · apply Eq.refl
-    · apply And.intro
-      · apply Eq.refl
-      · apply Eq.refl
+    { apply Eq.refl }
+    { apply And.intro
+      { apply Eq.refl }
+      { apply Eq.refl } }
 
 lemma inv_mem' {x : RubiksSuperType} : x ∈ ValidCube → x⁻¹ ∈ ValidCube := by
   intro hxv
@@ -222,6 +226,7 @@ lemma inv_mem' {x : RubiksSuperType} : x ∈ ValidCube → x⁻¹ ∈ ValidCube 
   { sorry }
   { sorry }
 
+/- Defining the subgroup of valid Rubik's cube positions. -/
 instance RubiksGroup : Subgroup RubiksSuperType := {
   carrier := ValidCube
   mul_mem' := mul_mem'
@@ -229,6 +234,7 @@ instance RubiksGroup : Subgroup RubiksSuperType := {
   inv_mem' := inv_mem'
 }
 
+/- Defining the intuitively valid set of Rubik's cube positions. -/
 inductive Reachable : RubiksSuperType → Prop where
   | Solved : Reachable Solved
   | FT : ∀x : RubiksSuperType, FaceTurn x → Reachable x
@@ -236,6 +242,7 @@ inductive Reachable : RubiksSuperType → Prop where
 
 end RubiksGroup
 
+/- The widget below was adapted from kendfrey's repository. -/
 section WIDGET
 
 inductive Color : Type | white | green | red | blue | orange | yellow
@@ -382,6 +389,7 @@ end WIDGET
 #widget cubeWidget (cubeStickerJson CornerTwist)
 #widget cubeWidget (cubeStickerJson EdgeFlip)
 
+/- Useful predicates for the SolutionAlgorithm, as well as for some minor proofs. -/
 section SolutionState
 
 def CornersSolved : RubiksSuperType → Prop :=

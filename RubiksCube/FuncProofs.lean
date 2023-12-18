@@ -4,6 +4,8 @@ import Mathlib.GroupTheory.Perm.Fin
 
 open Equiv Perm
 
+/- NOTE: ft_valid and reachable_valid will take a moment for Lean to process. -/
+
 section ValidityChecks
 
 -- lemma RValid : R ∈ ValidCube :=
@@ -13,7 +15,7 @@ section ValidityChecks
 --     { apply Eq.refl }
 --     { apply Eq.refl }
 
-lemma ftValid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
+lemma ft_valid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
   by
     intro x hx
     cases hx with
@@ -26,7 +28,7 @@ lemma TPermValid : TPerm ∈ ValidCube :=
   by
     simp [TPerm]
     repeat apply RubiksGroup.mul_mem'
-    all_goals apply ftValid
+    all_goals apply ft_valid
     { apply FaceTurn.R }
     { apply FaceTurn.U }
     { apply FaceTurn.R' }
@@ -56,6 +58,7 @@ lemma EdgeFlipInvalid : EdgeFlip ∉ ValidCube :=
 
 end ValidityChecks
 
+/- This theorem shows that the set of valid cube states as defined in terms of permutations and orientations of the pieces contains all positions reachable with standard Rubik's cube moves. Further showing that these two sets are in fact the same is equivalent to providing a solution algorithm for any valid cube state. I do not have a proof that the solution algorithm in `SolutionAlgorithm.lean` will solve any valid cube, but I am confident that this is the case (assuming no bugs in my concretely defined setup moves). -/
 theorem reachable_valid : ∀x : RubiksSuperType, Reachable x → x ∈ ValidCube := by
   intro x hrx
   induction hrx with
@@ -90,12 +93,12 @@ theorem reachable_valid : ∀x : RubiksSuperType, Reachable x → x ∈ ValidCub
 lemma solved_is_solved : IsSolved (Solved) := by
   simp [IsSolved, CornersSolved, EdgesSolved, Solved]
   apply And.intro
-  · apply And.intro
-    · apply Eq.refl
-    · apply Eq.refl
-  · apply And.intro
-    · apply Eq.refl
-    · apply Eq.refl
+  { apply And.intro
+    { apply Eq.refl }
+    { apply Eq.refl } }
+  { apply And.intro
+    { apply Eq.refl }
+    { apply Eq.refl } }
 
 -- set_option maxHeartbeats 50000
 

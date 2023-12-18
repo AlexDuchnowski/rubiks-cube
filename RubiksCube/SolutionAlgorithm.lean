@@ -2,12 +2,12 @@ import Lean
 import RubiksCube.RubiksCubeFunc
 import Mathlib.GroupTheory.Perm.Basic
 import Mathlib.GroupTheory.Perm.Fin
-import ProofWidgets.Component.HtmlDisplay
 
-open Equiv Perm Lean Widget ProofWidgets
+open Equiv Perm Lean Widget
 
 open scoped ProofWidgets.Jsx
 
+/- invert and update are useful for dealing with setup moves and partial solutions. -/
 def invert : List RubiksSuperType → List RubiksSuperType
   | [] => []
   | c :: cs => invert cs ++ [c⁻¹]
@@ -22,10 +22,7 @@ def AYPList : List RubiksSuperType := [R, U', R', U', R, U, R', F', R, U, R', U'
 
 def TPList : List RubiksSuperType := [R, U, R', U', R', F, R2, U', R', U', R, U, R', F']
 
--- def Misoriented {n m : ℕ+} : Fin n → (Fin n → Fin m) → Fin n
---   | 0, _ => 0
---   | x, f => if f x != 0 then x else Misoriented (x - 1) f
-
+/- This function is used to find a (non-buffer) piece that is incorrectly oriented whenever the buffer piece is in the buffer slot but the relevant set of pieces is not solved. This process of swapping the buffer piece out of the buffer slot is sometimes referred to as "breaking into a new cycle," and is discussed here: https://youtu.be/ZZ41gWvltT8?si=LxTY7dWfq_0yGaP6&t=220. -/
 def Misoriented {n m : ℕ+} (x : Fin n) (f : Fin n → Fin m) : Fin n :=
   Id.run do
   let mut out := x
@@ -38,6 +35,8 @@ def Misoriented {n m : ℕ+} (x : Fin n) (f : Fin n → Fin m) : Fin n :=
   out
 
 -- #eval Misoriented (fun x => 2 : Fin 8 → Fin 3) -- not working...why?
+
+abbrev FT := {t : RubiksSuperType // FaceTurn t}
 
 def cornerSetup : Fin 8 → Fin 3 → List RubiksSuperType
   | 0, _ => []
@@ -118,27 +117,16 @@ unsafe def solveCube : RubiksSuperType → List RubiksSuperType := fun c =>
   let edgeSolution := solveEdges c
   edgeSolution ++ solveCorners (update c edgeSolution)
 
-#eval L
-#eval L.1.permute 0
-#eval L.1.permute⁻¹ 0
-#eval Misoriented 0 L.1.orient
+unsafe def solveScramble : List RubiksSuperType → List RubiksSuperType :=
+  fun l => solveCube (generate l)
 
 #eval toString $ cornerSwap 7 1
-#eval toString $ solveEdges (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U')
-#eval toString $ solveEdges (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U')
 #eval toString $ solveEdges (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U')
 #eval update R (solveEdges R)
 
 #eval toString $ update R (solveCube R)
 #eval toString $ update (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U') (solveCube (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U'))
 
+/- Since the solution algorithm is unsafe, it cannot be used directly in the widget declarations, but the list of moves that solve the edges were generated using the algorithm and the toString method above. -/
 #widget cubeWidget (cubeStickerJson (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U'))
 #widget cubeWidget (cubeStickerJson (update (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U') [F, R, U, R', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', R, U', R', F', B', L, R, U, R', U', R', F, R2, U', R', U', R, U, R', F', L', B, B', R, U', R', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', R, U, R', B, B, L, R, U, R', U', R', F, R2, U', R', U', R, U, R', F', L', B', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', B, R, U', R', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', R, U, R', B', F, L', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', L, F', R, U, R', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', R, U', R', F', R, U, R', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', R, U', R', F, D2, L2, R, U, R', U', R', F, R2, U', R', U', R, U, R', F', L2, D2, D, F, L', R, U, R', U', R', F, R2, U', R', U', R, U, R', F', L, F', D', D2, L2, R, U, R', U', R', F, R2, U', R', U', R, U, R', F', L2, D2]))
-
-structure RubiksProps where
-  seq : Array String := #[]
-  deriving ToJson, FromJson, Inhabited
-
--- @[widget_module]
--- def Rubiks : Component RubiksProps where
---   javascript := include_str ".." / ".." / ".lake" / "build" / "js" / "rubiks.js"

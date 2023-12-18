@@ -13,7 +13,7 @@ section ValidityChecks
 --     { apply Eq.refl }
 --     { apply Eq.refl }
 
-lemma ftValid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
+lemma ft_valid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
   by
     intro x hx
     cases hx with
@@ -26,7 +26,7 @@ lemma TPermValid : TPerm ∈ ValidCube :=
   by
     simp [TPerm]
     repeat apply RubiksGroup.mul_mem'
-    all_goals apply ftValid
+    all_goals apply ft_valid
     { apply FaceTurn.R }
     { apply FaceTurn.U }
     { apply FaceTurn.R' }
@@ -80,12 +80,12 @@ theorem reachable_valid : ∀x : RubiksSuperType, Reachable x → x ∈ ValidCub
 lemma solved_is_solved : IsSolved (Solved) := by
   simp [IsSolved, CornersSolved, EdgesSolved, Solved]
   apply And.intro
-  · apply And.intro
-    · apply Eq.refl
-    · apply Eq.refl
-  · apply And.intro
-    · apply Eq.refl
-    · apply Eq.refl
+  { apply And.intro
+    { apply Eq.refl }
+    { apply Eq.refl } }
+  { apply And.intro
+    { apply Eq.refl }
+    { apply Eq.refl } }
 
 -- set_option maxHeartbeats 50000
 
