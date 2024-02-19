@@ -27,7 +27,7 @@ def ps_mul {p o : ℕ+} : PieceState p o → PieceState p o → PieceState p o :
 -- instance: Mul (PieceState p o) := mul
 --? How can I define multiplication, one, and inverses as implicit components of the PieceState type?
 
-lemma ps_mul_assoc {p o : ℕ+} : ∀ (a b c : PieceState p o), ps_mul (ps_mul a b) c = ps_mul a (ps_mul b  c) := by
+lemma ps_mul_assoc {p o : ℕ+} : ∀ (a b c : PieceState p o), ps_mul (ps_mul a b) c = ps_mul a (ps_mul b c) := by
   intro a b c
   simp [ps_mul]
   apply And.intro
