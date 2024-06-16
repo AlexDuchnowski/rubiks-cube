@@ -12,7 +12,7 @@ instance (n : Nat) : Repr (Perm (Fin n)) :=
 instance (n : Nat) : DecidableEq (Perm (Fin n)) :=
   λ a b => mk.injEq a.toFun a.invFun _ _ b.toFun b.invFun _ _ ▸ inferInstance
 
-/- This PieceState structure is used to represent the entire state of both corner pieces and edge pieces.-/
+/- This PieceState structure is used to represent the entire state of a set of pieces (which could be corner pieces or edge pieces).-/
 structure PieceState (pieces orientations: ℕ+) where
   permute : Perm (Fin pieces)
   orient : Fin pieces → Fin orientations
@@ -47,12 +47,11 @@ lemma ps_mul_one {p o : ℕ+} : ∀ (a : PieceState p o), ps_mul a {permute := 1
 def ps_inv {p o : ℕ+} : PieceState p o → PieceState p o :=
   fun ps =>
   { permute := ps.permute⁻¹
-    orient := fun x => - ps.orient (ps.permute⁻¹ x) }
+    orient := (-ps.orient) ∘ ps.permute }
 
 lemma ps_mul_left_inv {p o : ℕ+} : ∀ (a : PieceState p o), ps_mul (ps_inv a) a = {permute := 1, orient := 0} := by
   intro a
-  simp [ps_inv, ps_mul]
-  sorry
+  simp [ps_inv, ps_mul, Function.comp.assoc]
 
 /- This sets up a group structure for all Rubik's cube positions (including invalid ones that couldn't be reached from a solved state without removing pieces from the cube, twisting corners, etc.). -/
 instance PieceGroup (pieces orientations: ℕ+) :
@@ -91,97 +90,97 @@ def Solved : RubiksSuperType := 1
 
 section FACE_TURNS
 
-  /- These two functions (from kendfrey's repository) create a cycle permutation, which is useful for defining the rotation of any given face, as seen directly below. -/
-  def cycleImpl {α : Type*} [DecidableEq α] : α → List α → Perm α
-    | _, [] => 1
-    | a, (x :: xs) => swap a x * cycleImpl x xs
+/- These two functions (from kendfrey's repository) create a cycle permutation, which is useful for defining the rotation of any given face, as seen directly below. -/
+def cycleImpl {α : Type*} [DecidableEq α] : α → List α → Perm α
+  | _, [] => 1
+  | a, (x :: xs) => swap a x * cycleImpl x xs
 
-  def cyclePieces {α : Type*} [DecidableEq α] : List α → Perm α
-    | [] => 1
-    | (x :: xs) => cycleImpl x xs
+def cyclePieces {α : Type*} [DecidableEq α] : List α → Perm α
+  | [] => 1
+  | (x :: xs) => cycleImpl x xs
 
-  -- #eval List.map (cycle [0, 1, 2, 3] : Perm (Fin 12)) (List.range 12)
-  -- #eval List.map (cycle [0, 5, 8] : Perm (Fin 12)) (List.range 12)
+-- #eval List.map (cycle [0, 1, 2, 3] : Perm (Fin 12)) (List.range 12)
+-- #eval List.map (cycle [0, 5, 8] : Perm (Fin 12)) (List.range 12)
 
-  def U : RubiksSuperType :=
-    ⟨{permute := cyclePieces [0, 1, 2, 3], orient := 0},
-    {permute := cyclePieces [0, 1, 2, 3], orient := 0}⟩
-  def D : RubiksSuperType :=
-    ⟨{permute := cyclePieces [4, 5, 6, 7], orient := 0},
-    {permute := cyclePieces [4, 5, 6, 7], orient := 0}⟩
-  def R : RubiksSuperType :=
-    ⟨{permute := cyclePieces [1, 6, 5, 2], orient := Orient 8 3 [(1, 1), (6, 2), (5, 1), (2, 2)]},
-    {permute := cyclePieces [1, 9, 5, 10], orient := 0}⟩
-  def L : RubiksSuperType :=
-    ⟨{permute := cyclePieces [0, 3, 4, 7], orient := Orient 8 3 [(0, 2), (3, 1), (4, 2), (7, 1)]},
-    {permute := cyclePieces [3, 11, 7, 8], orient := 0}⟩
-  def F : RubiksSuperType :=
-    ⟨{permute := cyclePieces [2, 5, 4, 3], orient := Orient 8 3 [(2, 1), (5, 2), (4, 1), (3, 2)]},
-    {permute := cyclePieces [2, 10, 4, 11], orient := Orient 12 2 [(2, 1), (10, 1), (4, 1), (11, 1)]}⟩
-  def B : RubiksSuperType :=
-    ⟨{permute := cyclePieces [0, 7, 6, 1], orient := Orient 8 3 [(0, 1), (7, 2), (6, 1), (1, 2)]},
-    {permute := cyclePieces [0, 8, 6, 9], orient := Orient 12 2 [(0, 1), (8, 1), (6, 1), (9, 1)]}⟩
-  def U2 := U^2
-  def D2 := D^2
-  def R2 := R^2
-  def L2 := L^2
-  def F2 := F^2
-  def B2 := B^2
-  def U' := U⁻¹
-  def D' := D⁻¹
-  def R' := R⁻¹
-  def L' := L⁻¹
-  def F' := F⁻¹
-  def B' := B⁻¹
+def U : RubiksSuperType :=
+  ⟨{permute := cyclePieces [0, 1, 2, 3], orient := 0},
+  {permute := cyclePieces [0, 1, 2, 3], orient := 0}⟩
+def D : RubiksSuperType :=
+  ⟨{permute := cyclePieces [4, 5, 6, 7], orient := 0},
+  {permute := cyclePieces [4, 5, 6, 7], orient := 0}⟩
+def R : RubiksSuperType :=
+  ⟨{permute := cyclePieces [1, 6, 5, 2], orient := Orient 8 3 [(1, 1), (6, 2), (5, 1), (2, 2)]},
+  {permute := cyclePieces [1, 9, 5, 10], orient := 0}⟩
+def L : RubiksSuperType :=
+  ⟨{permute := cyclePieces [0, 3, 4, 7], orient := Orient 8 3 [(0, 2), (3, 1), (4, 2), (7, 1)]},
+  {permute := cyclePieces [3, 11, 7, 8], orient := 0}⟩
+def F : RubiksSuperType :=
+  ⟨{permute := cyclePieces [2, 5, 4, 3], orient := Orient 8 3 [(2, 1), (5, 2), (4, 1), (3, 2)]},
+  {permute := cyclePieces [2, 10, 4, 11], orient := Orient 12 2 [(2, 1), (10, 1), (4, 1), (11, 1)]}⟩
+def B : RubiksSuperType :=
+  ⟨{permute := cyclePieces [0, 7, 6, 1], orient := Orient 8 3 [(0, 1), (7, 2), (6, 1), (1, 2)]},
+  {permute := cyclePieces [0, 8, 6, 9], orient := Orient 12 2 [(0, 1), (8, 1), (6, 1), (9, 1)]}⟩
+def U2 := U^2
+def D2 := D^2
+def R2 := R^2
+def L2 := L^2
+def F2 := F^2
+def B2 := B^2
+def U' := U⁻¹
+def D' := D⁻¹
+def R' := R⁻¹
+def L' := L⁻¹
+def F' := F⁻¹
+def B' := B⁻¹
 
-  #check Multiplicative.coeToFun
+#check Multiplicative.coeToFun
 
-  inductive FaceTurn : RubiksSuperType → Prop where
-    | U : FaceTurn U
-    | D : FaceTurn D
-    | R : FaceTurn R
-    | L : FaceTurn L
-    | F : FaceTurn F
-    | B : FaceTurn B
-    | U2 : FaceTurn U2
-    | D2 : FaceTurn D2
-    | R2 : FaceTurn R2
-    | L2 : FaceTurn L2
-    | F2 : FaceTurn F2
-    | B2 : FaceTurn B2
-    | U' : FaceTurn U'
-    | D' : FaceTurn D'
-    | R' : FaceTurn R'
-    | L' : FaceTurn L'
-    | F' : FaceTurn F'
-    | B' : FaceTurn B'
+inductive FaceTurn : RubiksSuperType → Prop where
+  | U : FaceTurn U
+  | D : FaceTurn D
+  | R : FaceTurn R
+  | L : FaceTurn L
+  | F : FaceTurn F
+  | B : FaceTurn B
+  | U2 : FaceTurn U2
+  | D2 : FaceTurn D2
+  | R2 : FaceTurn R2
+  | L2 : FaceTurn L2
+  | F2 : FaceTurn F2
+  | B2 : FaceTurn B2
+  | U' : FaceTurn U'
+  | D' : FaceTurn D'
+  | R' : FaceTurn R'
+  | L' : FaceTurn L'
+  | F' : FaceTurn F'
+  | B' : FaceTurn B'
 
-  instance : ToString RubiksSuperType where
-    toString : RubiksSuperType → String :=
-    fun c =>
-    if c = Solved then "Solved"
-    else if c = U then "U"
-    else if c = D then "D"
-    else if c = R then "R"
-    else if c = L then "L"
-    else if c = F then "F"
-    else if c = B then "B"
-    else if c = U2 then "U2"
-    else if c = D2 then "D2"
-    else if c = R2 then "R2"
-    else if c = L2 then "L2"
-    else if c = F2 then "F2"
-    else if c = B2 then "B2"
-    else if c = U' then "U'"
-    else if c = D' then "D'"
-    else if c = R' then "R'"
-    else if c = L' then "L'"
-    else if c = F' then "F'"
-    else if c = B' then "B'"
-    else s!"{repr c}"
+instance : ToString RubiksSuperType where
+  toString : RubiksSuperType → String :=
+  fun c =>
+  if c = Solved then "Solved"
+  else if c = U then "U"
+  else if c = D then "D"
+  else if c = R then "R"
+  else if c = L then "L"
+  else if c = F then "F"
+  else if c = B then "B"
+  else if c = U2 then "U2"
+  else if c = D2 then "D2"
+  else if c = R2 then "R2"
+  else if c = L2 then "L2"
+  else if c = F2 then "F2"
+  else if c = B2 then "B2"
+  else if c = U' then "U'"
+  else if c = D' then "D'"
+  else if c = R' then "R'"
+  else if c = L' then "L'"
+  else if c = F' then "F'"
+  else if c = B' then "B'"
+  else s!"{repr c}"
 
-  -- instance : Multiplicative.coeToFun RubiksSuperType := {coe := fun (a : RubiksSuperType) => fun (b : RubiksSuperType) => a * b }
-  --? How do I get the line above to work?
+-- instance : Multiplicative.coeToFun RubiksSuperType := {coe := fun (a : RubiksSuperType) => fun (b : RubiksSuperType) => a * b }
+--? How do I get the line above to work?
 
 end FACE_TURNS
 
@@ -194,23 +193,34 @@ def EdgeFlip : RubiksSuperType := ({permute := 1, orient := 0}, {permute := 1, o
 section RubiksGroup
 
 -- def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Fin.foldl 8 (fun acc n => acc + c.fst.orient n) 0 = 0 ∧ Fin.foldl 12 (fun acc n => acc + c.snd.orient n) 0 = 0}
-def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Finset.sum ({0,1,2,3,4,5,6,7} : Finset (Fin 8)) c.fst.orient = 0 ∧ Finset.sum ({0,1,2,3,4,5,6,7,8,9,10,11} : Finset (Fin 12)) c.snd.orient = 0}
+def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Finset.sum (Finset.univ : Finset (Fin 8)) c.fst.orient = 0 ∧ Finset.sum (Finset.univ : Finset (Fin 12)) c.snd.orient = 0}
+
+lemma finset_sum_univ_perm {n : ℕ} {α : Type} [AddCommMonoid α] (f : Fin n → α) (g : Perm (Fin n)) (s : α) : Finset.sum (Finset.univ : Finset (Fin n)) (fun x => f x) = s → Finset.sum (Finset.univ : Finset (Fin n)) (fun x => f (g x)) = s := by
+  intro h
+  rw [←h]
+  apply Finset.sum_bij (fun x y => g x)
+  { exact fun a ha ↦ Finset.mem_univ (g a) }
+  { exact fun a ha ↦ rfl }
+  { intro a1 a2 ha1 ha2 hg
+    have hgi : Function.Injective g := by exact Equiv.injective g
+    exact hgi hg }
+  { simp
+    intro b
+    have hgi : Function.Surjective g := by exact Equiv.surjective g
+    apply Exists.elim (hgi b)
+    exact fun a a_1 ↦ Exists.intro a (id a_1.symm) }
 
 lemma mul_mem' {a b : RubiksSuperType} : a ∈ ValidCube → b ∈ ValidCube → a * b ∈ ValidCube := by
   intro hav hbv
   simp [ValidCube, PieceState.mul_def, ps_mul]
   repeat' apply And.intro
-  { have h1 : sign a.1.permute = sign a.2.permute := by apply hav.left
-    have h2 : sign b.1.permute = sign b.2.permute := by apply hbv.left
-    simp [h1, h2] }
-  { have h1 : Finset.sum {0, 1, 2, 3, 4, 5, 6, 7} a.1.orient = 0 := by apply hav.right.left
-    have h2 : Finset.sum {0, 1, 2, 3, 4, 5, 6, 7} b.1.orient = 0 := by apply hbv.right.left
-    -- rw [PieceState.orient, PieceState.orient]
-    rw [Finset.sum_add_distrib, h2]
-    sorry }
-  { sorry }
-
-#check Finset.sum_add_distrib
+  { simp [hav.left, hbv.left] }
+  { simp [Finset.sum_add_distrib, hbv.right.left]
+    apply finset_sum_univ_perm
+    apply hav.right.left }
+  { simp [Finset.sum_add_distrib, hbv.right.right]
+    apply finset_sum_univ_perm
+    apply hav.right.right }
 
 lemma one_mem' : 1 ∈ ValidCube := by
     simp [ValidCube]
@@ -225,8 +235,10 @@ lemma inv_mem' {x : RubiksSuperType} : x ∈ ValidCube → x⁻¹ ∈ ValidCube 
   simp [ValidCube, PieceState.inv_def, ps_inv]
   repeat' apply And.intro
   { apply hxv.left }
-  { sorry }
-  { sorry }
+  { apply finset_sum_univ_perm
+    apply hxv.right.left }
+  { apply finset_sum_univ_perm
+    apply hxv.right.right }
 
 /- Defining the subgroup of valid Rubik's cube positions. -/
 instance RubiksGroup : Subgroup RubiksSuperType := {
@@ -383,13 +395,18 @@ def cubeStickerJson : RubiksSuperType → Json :=
     );
   }"
 
-end WIDGET
-
+/- Examples of the widget in action. Place your cursor on one of the lines below to see the corresponding cube diagram in the Lean Infoview. -/
 #widget cubeWidget (cubeStickerJson Solved)
 #widget cubeWidget (cubeStickerJson TPerm)
 #widget cubeWidget (cubeStickerJson AlteredYPerm)
 #widget cubeWidget (cubeStickerJson CornerTwist)
+#widget cubeWidget (cubeStickerJson (CornerTwist * CornerTwist))
+#widget cubeWidget (cubeStickerJson (CornerTwist * CornerTwist * CornerTwist))
 #widget cubeWidget (cubeStickerJson EdgeFlip)
+#widget cubeWidget (cubeStickerJson (R * F'))
+#widget cubeWidget (cubeStickerJson (R * U)⁻¹)
+
+end WIDGET
 
 /- Useful predicates for the SolutionAlgorithm, as well as for some minor proofs. -/
 section SolutionState

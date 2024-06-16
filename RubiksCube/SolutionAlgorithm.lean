@@ -120,6 +120,7 @@ unsafe def solveCube : RubiksSuperType → List RubiksSuperType := fun c =>
 unsafe def solveScramble : List RubiksSuperType → List RubiksSuperType :=
   fun l => solveCube (generate l)
 
+#eval toString $ R * U
 #eval toString $ cornerSwap 7 1
 #eval toString $ solveEdges (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U')
 #eval update R (solveEdges R)

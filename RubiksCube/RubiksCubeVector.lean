@@ -21,12 +21,12 @@ def permuteVector {α : Type} {n : ℕ} : Perm (Fin n) → Vector α n → Vecto
 structure PieceState (pieces orientations: ℕ+) where
   permute : Perm (Fin pieces)
   orient : Vector (Fin orientations) pieces
-  deriving Repr
+  deriving Repr, DecidableEq
 
 def ps_mul {p o : ℕ+} : PieceState p o → PieceState p o → PieceState p o :=
   fun a b => {
     permute := b.permute * a.permute
-    orient := Vector.map₂ Fin.add (permuteVector b.permute a.orient) b.orient
+    orient := Vector.map₂ Fin.add (permuteVector b.permute⁻¹ a.orient) b.orient
   }
 
 lemma ps_mul_assoc {p o : ℕ+} : ∀ (a b c : PieceState p o), ps_mul (ps_mul a b) c = ps_mul a (ps_mul b  c) := by
@@ -56,7 +56,7 @@ lemma ps_mul_one {p o : ℕ+} : ∀ (a : PieceState p o), ps_mul a {permute := 1
 def ps_inv {p o : ℕ+} : PieceState p o → PieceState p o :=
   fun ps =>
   { permute := ps.permute⁻¹
-    orient := permuteVector ps.permute⁻¹ (Vector.map (fun x => -x) ps.orient) }
+    orient := permuteVector ps.permute (Vector.map (fun x => -x) ps.orient) }
 
 lemma ps_mul_left_inv {p o : ℕ+} : ∀ (a : PieceState p o), ps_mul (ps_inv a) a = {permute := 1, orient := Vector.replicate p 0} := by
   intro a
@@ -96,64 +96,64 @@ def orientVector (p o : ℕ+) : List ((Fin p) × (Fin o)) → Vector (Fin o) p
 
 section FACE_TURNS
 
-  def cycleImpl {α : Type*} [DecidableEq α] : α → List α → Perm α
-    | _, [] => 1
-    | a, (x :: xs) => swap a x * cycleImpl x xs
+def cycleImpl {α : Type*} [DecidableEq α] : α → List α → Perm α
+  | _, [] => 1
+  | a, (x :: xs) => swap a x * cycleImpl x xs
 
-  def cyclePieces {α : Type*} [DecidableEq α] : List α → Perm α
-    | [] => 1
-    | (x :: xs) => cycleImpl x xs
+def cyclePieces {α : Type*} [DecidableEq α] : List α → Perm α
+  | [] => 1
+  | (x :: xs) => cycleImpl x xs
 
-  def U : RubiksSuperType :=
-    ⟨{permute := cyclePieces [0, 1, 2, 3], orient := zeroOrient 8 3},
-    {permute := cyclePieces [0, 1, 2, 3], orient := zeroOrient 12 2}⟩
-  def D : RubiksSuperType :=
-    ⟨{permute := cyclePieces [4, 5, 6, 7], orient := zeroOrient 8 3},
-    {permute := cyclePieces [4, 5, 6, 7], orient := zeroOrient 12 2}⟩
-  def R : RubiksSuperType :=
-    ⟨{permute := cyclePieces [1, 6, 5, 2], orient := orientVector 8 3 [(1, 1), (6, 2), (5, 1), (2, 2)]},
-    {permute := cyclePieces [1, 9, 5, 10], orient := zeroOrient 12 2}⟩
-  def L : RubiksSuperType :=
-    ⟨{permute := cyclePieces [0, 3, 4, 7], orient := orientVector 8 3 [(0, 2), (3, 1), (4, 2), (7, 1)]},
-    {permute := cyclePieces [3, 11, 7, 8], orient := zeroOrient 12 2}⟩
-  def F : RubiksSuperType :=
-    ⟨{permute := cyclePieces [2, 5, 4, 3], orient := orientVector 8 3 [(2, 1), (5, 2), (4, 1), (3, 2)]},
-    {permute := cyclePieces [2, 10, 4, 11], orient := orientVector 12 2 [(2, 1), (10, 1), (4, 1), (11, 1)]}⟩
-  def B : RubiksSuperType :=
-    ⟨{permute := cyclePieces [0, 7, 6, 1], orient := orientVector 8 3 [(0, 1), (7, 2), (6, 1), (1, 2)]},
-    {permute := cyclePieces [0, 8, 6, 9], orient := orientVector 12 2 [(0, 1), (8, 1), (6, 1), (9, 1)]}⟩
-  def U2 := U^2
-  def D2 := D^2
-  def R2 := R^2
-  def L2 := L^2
-  def F2 := F^2
-  def B2 := B^2
-  def U' := U⁻¹
-  def D' := D⁻¹
-  def R' := R⁻¹
-  def L' := L⁻¹
-  def F' := F⁻¹
-  def B' := B⁻¹
+def U : RubiksSuperType :=
+  ⟨{permute := cyclePieces [0, 1, 2, 3], orient := zeroOrient 8 3},
+  {permute := cyclePieces [0, 1, 2, 3], orient := zeroOrient 12 2}⟩
+def D : RubiksSuperType :=
+  ⟨{permute := cyclePieces [4, 5, 6, 7], orient := zeroOrient 8 3},
+  {permute := cyclePieces [4, 5, 6, 7], orient := zeroOrient 12 2}⟩
+def R : RubiksSuperType :=
+  ⟨{permute := cyclePieces [1, 6, 5, 2], orient := orientVector 8 3 [(1, 1), (6, 2), (5, 1), (2, 2)]},
+  {permute := cyclePieces [1, 9, 5, 10], orient := zeroOrient 12 2}⟩
+def L : RubiksSuperType :=
+  ⟨{permute := cyclePieces [0, 3, 4, 7], orient := orientVector 8 3 [(0, 2), (3, 1), (4, 2), (7, 1)]},
+  {permute := cyclePieces [3, 11, 7, 8], orient := zeroOrient 12 2}⟩
+def F : RubiksSuperType :=
+  ⟨{permute := cyclePieces [2, 5, 4, 3], orient := orientVector 8 3 [(2, 1), (5, 2), (4, 1), (3, 2)]},
+  {permute := cyclePieces [2, 10, 4, 11], orient := orientVector 12 2 [(2, 1), (10, 1), (4, 1), (11, 1)]}⟩
+def B : RubiksSuperType :=
+  ⟨{permute := cyclePieces [0, 7, 6, 1], orient := orientVector 8 3 [(0, 1), (7, 2), (6, 1), (1, 2)]},
+  {permute := cyclePieces [0, 8, 6, 9], orient := orientVector 12 2 [(0, 1), (8, 1), (6, 1), (9, 1)]}⟩
+def U2 := U^2
+def D2 := D^2
+def R2 := R^2
+def L2 := L^2
+def F2 := F^2
+def B2 := B^2
+def U' := U⁻¹
+def D' := D⁻¹
+def R' := R⁻¹
+def L' := L⁻¹
+def F' := F⁻¹
+def B' := B⁻¹
 
-  inductive FaceTurn : RubiksSuperType → Prop where
-    | U : FaceTurn U
-    | D : FaceTurn D
-    | R : FaceTurn R
-    | L : FaceTurn L
-    | F : FaceTurn F
-    | B : FaceTurn B
-    | U2 : FaceTurn U2
-    | D2 : FaceTurn D2
-    | R2 : FaceTurn R2
-    | L2 : FaceTurn L2
-    | F2 : FaceTurn F2
-    | B2 : FaceTurn B2
-    | U' : FaceTurn U'
-    | D' : FaceTurn D'
-    | R' : FaceTurn R'
-    | L' : FaceTurn L'
-    | F' : FaceTurn F'
-    | B' : FaceTurn B'
+inductive FaceTurn : RubiksSuperType → Prop where
+  | U : FaceTurn U
+  | D : FaceTurn D
+  | R : FaceTurn R
+  | L : FaceTurn L
+  | F : FaceTurn F
+  | B : FaceTurn B
+  | U2 : FaceTurn U2
+  | D2 : FaceTurn D2
+  | R2 : FaceTurn R2
+  | L2 : FaceTurn L2
+  | F2 : FaceTurn F2
+  | B2 : FaceTurn B2
+  | U' : FaceTurn U'
+  | D' : FaceTurn D'
+  | R' : FaceTurn R'
+  | L' : FaceTurn L'
+  | F' : FaceTurn F'
+  | B' : FaceTurn B'
 
 end FACE_TURNS
 

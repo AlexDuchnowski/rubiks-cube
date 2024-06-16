@@ -54,3 +54,12 @@ def permuteVector {α : Type} {n : ℕ} : Perm (Fin n) → Vector α n → Vecto
 -- #eval v2.map swapFLPerm -- not what I wanted
 
 #eval ([-1, -2, -3, -4, -0] : List (Fin 5))
+
+def orient1 : Fin 5 → Fin 3 := fun x => match x with
+  | 0 => 0
+  | 1 => 1
+  | 2 => 1
+  | 3 => 0
+  | 4 => 2
+
+#eval -orient1 4
