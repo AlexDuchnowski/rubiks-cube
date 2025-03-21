@@ -21,3 +21,7 @@ I experimented with two approaches to representing the orientations of the piece
 ## Solving the Cube
 
 The approach used in the solution algorithm is based on the Old Pochmann method, which is explained in [this video](https://youtu.be/ZZ41gWvltT8?si=H5LTXiRIMsc2TSEk) and on [this website](https://www.speedcubereview.com/blind-solving-algorithms.html). Specifically, I implement a version that only uses intuitive setup moves in combination with the T Perm for edges and the Altered Y Perm for corners. Note that since edges are solved first, the edge setup moves are allowed to disturb the UBR and URF corners, since these pieces aren't being memorized. The corner setup moves, however, are designed to not disturb the UB and UL edges, which swap every time the Altered Y Perm algorithm is applied.
+
+## Acknowledgements
+
+I would like to thank [@jrr6](https://github.com/jrr6), [@robertylewis](https://github.com/robertylewis), and [@chenjulang](https://github.com/chenjulang) for their support and guidance. Without them, this project would not have gotten off the ground, and even if it had, many more of these proofs would be incomplete.
