@@ -8,12 +8,10 @@ open Equiv Perm
 
 section ValidityChecks
 
--- lemma RValid : R ∈ ValidCube :=
---   by
---     simp [R, ValidCube]
---     apply And.intro
---     { apply Eq.refl }
---     { apply Eq.refl }
+lemma RValid : R ∈ ValidCube :=
+  by
+    simp [R, ValidCube]
+    decide
 
 lemma ft_valid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
   by
@@ -21,8 +19,7 @@ lemma ft_valid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
     cases hx with
     | _ =>
       simp [ValidCube, U, D, R, L, F, B, U2, D2, R2, L2, F2, B2, U', D', R', L', F', B']
-      repeat' apply And.intro
-      all_goals apply Eq.refl
+      decide
 
 lemma TPermValid : TPerm ∈ ValidCube :=
   by
@@ -47,14 +44,12 @@ lemma TPermValid : TPerm ∈ ValidCube :=
 lemma CornerTwistInvalid : CornerTwist ∉ ValidCube :=
   by
     simp [CornerTwist, ValidCube]
-    intro h
-    -- have h2 : ∀x ∈ ({0,1,2,3,4,5,6,7} : Set (Fin 8)), (fun | 0 => 1 | _ => 0) x = 0 := Finset.sum_eq_zero_iff.mp h
-    sorry
+    decide
 
 lemma EdgeFlipInvalid : EdgeFlip ∉ ValidCube :=
   by
     simp [EdgeFlip, ValidCube]
-    sorry
+    decide
 
 end ValidityChecks
 

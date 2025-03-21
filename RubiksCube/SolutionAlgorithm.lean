@@ -23,7 +23,7 @@ def AYPList : List RubiksSuperType := [R, U', R', U', R, U, R', F', R, U, R', U'
 def TPList : List RubiksSuperType := [R, U, R', U', R', F, R2, U', R', U', R, U, R', F']
 
 /- This function is used to find a (non-buffer) piece that is incorrectly oriented whenever the buffer piece is in the buffer slot but the relevant set of pieces is not solved. This process of swapping the buffer piece out of the buffer slot is sometimes referred to as "breaking into a new cycle," and is discussed here: https://youtu.be/ZZ41gWvltT8?si=LxTY7dWfq_0yGaP6&t=220. -/
-def Misoriented {n m : ℕ+} (x : Fin n) (f : Fin n → Fin m) : Fin n :=
+def getMisoriented {n m : ℕ+} (x : Fin n) (f : Fin n → Fin m) : Fin n :=
   Id.run do
   let mut out := x
   for h : i in [0:n] do
@@ -71,7 +71,7 @@ unsafe def solveCorners : RubiksSuperType → List RubiksSuperType := fun c =>
   else
     let buffer := c.1.permute⁻¹ 0
     let swap := match buffer with
-      | 0 => cornerSwap (Misoriented 0 c.1.orient) 0
+      | 0 => cornerSwap (getMisoriented 0 c.1.orient) 0
       | _ => cornerSwap buffer (c.1.orient 0)
     swap ++ solveCorners (update c swap)
 
@@ -109,7 +109,7 @@ unsafe def solveEdges : RubiksSuperType → List RubiksSuperType := fun c =>
   else
     let buffer := c.2.permute⁻¹ 1
     let swap := match buffer with
-      | 1 => edgeSwap (Misoriented 1 c.2.orient) 0
+      | 1 => edgeSwap (getMisoriented 1 c.2.orient) 0
       | _ => edgeSwap buffer (c.2.orient 1)
     swap ++ solveEdges (update c swap)
 
@@ -120,6 +120,7 @@ unsafe def solveCube : RubiksSuperType → List RubiksSuperType := fun c =>
 unsafe def solveScramble : List RubiksSuperType → List RubiksSuperType :=
   fun l => solveCube (generate l)
 
+#widget cubeWidget (cubeStickerJson (R * U))
 #eval toString $ R * U
 #eval toString $ cornerSwap 7 1
 #eval toString $ solveEdges (R * B2 * D * L2 * B2 * R2 * B2 * D * F2 * U * R2 * D2 * R' * U' * B * F * L' * D2 * R * D' * U')
