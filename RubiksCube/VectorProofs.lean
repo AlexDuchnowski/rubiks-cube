@@ -6,12 +6,12 @@ open Equiv Perm
 
 section ValidityChecks
 
--- lemma RValid : R ∈ ValidCube :=
---   by
---     simp [R, ValidCube]
---     apply And.intro
---     { apply Eq.refl }
---     { apply Eq.refl }
+lemma r_valid : R ∈ ValidCube :=
+  by
+    simp [R, ValidCube]
+    apply And.intro
+    { apply Eq.refl }
+    { native_decide }
 
 lemma ft_valid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
   by
@@ -22,7 +22,7 @@ lemma ft_valid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
       repeat' apply And.intro
       all_goals apply Eq.refl
 
-lemma TPermValid : TPerm ∈ ValidCube :=
+lemma tperm_valid : TPerm ∈ ValidCube :=
   by
     simp [TPerm]
     repeat apply RubiksGroup.mul_mem'
@@ -42,12 +42,12 @@ lemma TPermValid : TPerm ∈ ValidCube :=
     { apply FaceTurn.R' }
     { apply FaceTurn.F' }
 
-lemma CornerTwistInvalid : CornerTwist ∉ ValidCube :=
+lemma corner_twist_invalid : CornerTwist ∉ ValidCube :=
   by
     simp [CornerTwist, ValidCube, zeroOrient, Vector.toList, Vector.replicate, Vector.set, List.set]
     exact (bne_iff_ne 3 1).mp (by rfl)
 
-lemma EdgeFlipInvalid : EdgeFlip ∉ ValidCube :=
+lemma edge_flip_invalid : EdgeFlip ∉ ValidCube :=
   by
     simp [EdgeFlip, ValidCube, zeroOrient, Vector.toList, Vector.replicate, Vector.set, List.set]
     exact (bne_iff_ne 2 1).mp (by rfl)
@@ -77,29 +77,7 @@ theorem reachable_valid : ∀x : RubiksSuperType, Reachable x → x ∈ ValidCub
       apply RubiksGroup.mul_mem'
       all_goals assumption
 
-lemma solved_is_solved : IsSolved (Solved) := by
-  simp [IsSolved, CornersSolved, EdgesSolved, Solved]
-  apply And.intro
-  { apply And.intro
-    { apply Eq.refl }
-    { apply Eq.refl } }
-  { apply And.intro
-    { apply Eq.refl }
-    { apply Eq.refl } }
-
--- set_option maxHeartbeats 50000
-
-lemma four_rs_solved : IsSolved (R * R * R * R) := by
-  simp [R, IsSolved, CornersSolved, EdgesSolved, Solved, orientVector, zeroOrient]
-  repeat (all_goals apply And.intro)
-  { simp [cyclePieces, cycleImpl, PieceState.mul_def, ps_mul, Equiv.Perm.permGroup.mul_assoc]
-    -- have h : swap 1 6 * (swap 6 5 * swap 5 2) *
-    -- (swap 1 6 * (swap 6 5 * swap 5 2) * (swap 1 6 * (swap 6 5 * swap 5 2) * (swap 1 6 * (swap 6 5 * swap 5 2)))) = swap 1 6 * swap 6 5 * swap 5 2 *
-    -- swap 1 6 * swap 6 5 * swap 5 2 * swap 1 6 * swap 6 5 * swap 5 2 * swap 1 6 * swap 6 5 * swap 5 2 := by apply
-    sorry }
-  { simp [cyclePieces, cycleImpl, PieceState.mul_def, ps_mul]
-    sorry }
-  { sorry }
-  { sorry }
+lemma solved_is_solved : IsSolved (Solved) := by native_decide
+lemma four_rs_solved : IsSolved (R * R * R * R) := by native_decide
 
 #check Equiv.Perm.permGroup.mul_assoc

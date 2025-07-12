@@ -8,7 +8,7 @@ open Equiv Perm
 
 section ValidityChecks
 
-lemma RValid : R ∈ ValidCube :=
+lemma r_valid : R ∈ ValidCube :=
   by
     simp [R, ValidCube]
     decide
@@ -21,7 +21,7 @@ lemma ft_valid : ∀x : RubiksSuperType, FaceTurn x → x ∈ ValidCube :=
       simp [ValidCube, U, D, R, L, F, B, U2, D2, R2, L2, F2, B2, U', D', R', L', F', B']
       decide
 
-lemma TPermValid : TPerm ∈ ValidCube :=
+lemma tperm_valid : TPerm ∈ ValidCube :=
   by
     simp [TPerm]
     repeat apply RubiksGroup.mul_mem'
@@ -41,12 +41,12 @@ lemma TPermValid : TPerm ∈ ValidCube :=
     { apply FaceTurn.R' }
     { apply FaceTurn.F' }
 
-lemma CornerTwistInvalid : CornerTwist ∉ ValidCube :=
+lemma corner_twist_invalid : CornerTwist ∉ ValidCube :=
   by
     simp [CornerTwist, ValidCube]
     decide
 
-lemma EdgeFlipInvalid : EdgeFlip ∉ ValidCube :=
+lemma edge_flip_invalid : EdgeFlip ∉ ValidCube :=
   by
     simp [EdgeFlip, ValidCube]
     decide
@@ -80,34 +80,15 @@ theorem reachable_valid : ∀x : RubiksSuperType, Reachable x → x ∈ ValidCub
 -- instance {n : ℕ} {α : Type*} [DecidableEq α] : DecidableEq (Fin n → α) :=
 --   fun f g => Fintype.decidablePiFintype f g
 
---? Why do both of these pause forever?
--- lemma four_rs_eq_solved : (R * R * R * R) = Solved := by
---   simp [R, Solved]
---   aesop
 
-lemma solved_is_solved : IsSolved (Solved) := by
-  simp [IsSolved, CornersSolved, EdgesSolved, Solved]
-  apply And.intro
-  { apply And.intro
-    { apply Eq.refl }
-    { apply Eq.refl } }
-  { apply And.intro
-    { apply Eq.refl }
-    { apply Eq.refl } }
+lemma solved_is_solved : IsSolved (Solved) := by native_decide
+lemma four_rs_solved : IsSolved (R * R * R * R) := by native_decide
 
--- set_option maxHeartbeats 50000
+lemma corner_twist_unreachable: ¬ Reachable CornerTwist := by
+  intro h
+  apply reachable_valid at h
+  have h' : CornerTwist ∉ ValidCube := corner_twist_invalid
+  contradiction
 
-lemma four_rs_solved : IsSolved (R * R * R * R) := by
-  simp [R, IsSolved, CornersSolved, EdgesSolved, Solved]
-  repeat (all_goals apply And.intro)
-  { simp [cyclePieces, cycleImpl, PieceState.mul_def, ps_mul, Equiv.Perm.permGroup.mul_assoc]
-    -- have h : swap 1 6 * (swap 6 5 * swap 5 2) *
-    -- (swap 1 6 * (swap 6 5 * swap 5 2) * (swap 1 6 * (swap 6 5 * swap 5 2) * (swap 1 6 * (swap 6 5 * swap 5 2)))) = swap 1 6 * swap 6 5 * swap 5 2 *
-    -- swap 1 6 * swap 6 5 * swap 5 2 * swap 1 6 * swap 6 5 * swap 5 2 * swap 1 6 * swap 6 5 * swap 5 2 := by apply
-    sorry }
-  { simp [cyclePieces, cycleImpl, PieceState.mul_def, ps_mul, Orient]
-    sorry }
-  { sorry }
-  { sorry }
 
 #check Equiv.Perm.permGroup.mul_assoc
