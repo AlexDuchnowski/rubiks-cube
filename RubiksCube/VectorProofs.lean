@@ -80,4 +80,8 @@ theorem reachable_valid : ∀x : RubiksSuperType, Reachable x → x ∈ ValidCub
 lemma solved_is_solved : IsSolved (Solved) := by native_decide
 lemma four_rs_solved : IsSolved (R * R * R * R) := by native_decide
 
-#check Equiv.Perm.permGroup.mul_assoc
+lemma corner_twist_unreachable: ¬ Reachable CornerTwist := by
+  intro h
+  apply reachable_valid at h
+  have h' : CornerTwist ∉ ValidCube := corner_twist_invalid
+  contradiction

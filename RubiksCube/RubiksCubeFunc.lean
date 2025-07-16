@@ -187,13 +187,16 @@ end FACE_TURNS
 def TPerm : RubiksSuperType := R * U * R' * U' * R' * F * R2 * U' * R' * U' * R * U * R' * F'
 def AlteredYPerm : RubiksSuperType := R * U' * R' * U' * R * U * R' * F' * R * U * R' * U' * R' * F * R
 
-def CornerTwist : RubiksSuperType := ({permute := 1, orient := (fun | 0 => 1 | _ => 0) }, {permute := 1, orient := 0})
-def EdgeFlip : RubiksSuperType := ({permute := 1, orient := 0}, {permute := 1, orient := (fun | 0 => 1 | _ => 0)})
+def CornerTwist : RubiksSuperType := ({permute := 1, orient := (fun | 2 => 1 | _ => 0) }, {permute := 1, orient := 0})
+def EdgeFlip : RubiksSuperType := ({permute := 1, orient := 0}, {permute := 1, orient := (fun | 2 => 1 | _ => 0)})
 
 section RubiksGroup
 
 -- def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Fin.foldl 8 (fun acc n => acc + c.fst.orient n) 0 = 0 ∧ Fin.foldl 12 (fun acc n => acc + c.snd.orient n) 0 = 0}
-def ValidCube : Set RubiksSuperType := {c | Perm.sign c.fst.permute = Perm.sign c.snd.permute ∧ Finset.sum (Finset.univ : Finset (Fin 8)) c.fst.orient = 0 ∧ Finset.sum (Finset.univ : Finset (Fin 12)) c.snd.orient = 0}
+def ValidCube : Set RubiksSuperType := {c |
+  Perm.sign c.fst.permute = Perm.sign c.snd.permute
+  ∧ Finset.sum (Finset.univ : Finset (Fin 8)) c.fst.orient = 0
+  ∧ Finset.sum (Finset.univ : Finset (Fin 12)) c.snd.orient = 0}
 
 lemma finset_sum_univ_perm {n : ℕ} {α : Type} [AddCommMonoid α] (f : Fin n → α) (g : Perm (Fin n)) (s : α) : Finset.sum (Finset.univ : Finset (Fin n)) (fun x => f x) = s → Finset.sum (Finset.univ : Finset (Fin n)) (fun x => f (g x)) = s := by
   intro h
@@ -311,8 +314,14 @@ def edge_sticker : Fin 12 → Fin 2 → RubiksSuperType → Color :=
 
 open Lean Widget
 
-def L8x3 : List (ℕ × ℕ) := (List.map (fun x => (x, 0)) (List.range 8)) ++ (List.map (fun x => (x, 1)) (List.range 8)) ++ (List.map (fun x => (x, 2)) (List.range 8))
-def L12x2 : List (ℕ × ℕ) := (List.map (fun x => (x, 0)) (List.range 12)) ++ (List.map (fun x => (x, 1)) (List.range 12))
+def L8x3 : List (ℕ × ℕ) :=
+  (List.map (fun x => (x, 0)) (List.range 8)) ++
+  (List.map (fun x => (x, 1)) (List.range 8)) ++
+  (List.map (fun x => (x, 2)) (List.range 8))
+
+def L12x2 : List (ℕ × ℕ) :=
+  (List.map (fun x => (x, 0)) (List.range 12)) ++
+  (List.map (fun x => (x, 1)) (List.range 12))
 
 def cubeStickerJson : RubiksSuperType → Json :=
   fun cube => Json.mkObj
@@ -406,16 +415,21 @@ def cubeStickerJson : RubiksSuperType → Json :=
 #widget cubeWidget (cubeStickerJson (R * F'))
 #widget cubeWidget (cubeStickerJson (R * U)⁻¹)
 
+def CornerSwap : RubiksSuperType := ({permute := Equiv.swap 0 1, orient := 0 }, {permute := 1, orient := 0})
+
+def CornerSwapTwist : RubiksSuperType := ({permute := Equiv.swap 0 1, orient := (fun | 0 => 1 | _ => 0) }, {permute := 1, orient := 0})
+
+#widget cubeWidget (cubeStickerJson CornerSwap)
+#widget cubeWidget (cubeStickerJson CornerSwapTwist)
+
 end WIDGET
 
 /- Useful predicates for the SolutionAlgorithm, as well as for some minor proofs. -/
 section SolutionState
 
-def CornersSolved : RubiksSuperType → Prop :=
-  fun c => c.fst.permute = 1 ∧ c.fst.orient = 0
+def CornersSolved : RubiksSuperType → Prop := fun c => c.fst.permute = 1 ∧ c.fst.orient = 0
 
-def EdgesSolved : RubiksSuperType → Prop :=
-  fun c => c.snd.permute = 1 ∧ c.snd.orient = 0
+def EdgesSolved : RubiksSuperType → Prop := fun c => c.snd.permute = 1 ∧ c.snd.orient = 0
 
 def IsSolved : RubiksSuperType → Prop := fun c => CornersSolved c ∧ EdgesSolved c
 

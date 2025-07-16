@@ -6,11 +6,9 @@ open Equiv Perm
 
 section RubiksSuperGroup
 
-instance (n : Nat) : Repr (Perm (Fin n)) :=
-  ⟨reprPrec ∘ Equiv.toFun⟩
+instance (n : Nat) : Repr (Perm (Fin n)) := ⟨reprPrec ∘ Equiv.toFun⟩
 
-instance (n m : Nat) : Repr (Vector (Fin n) m) :=
-  ⟨reprPrec ∘ Vector.toList⟩
+instance (n m : Nat) : Repr (Vector (Fin n) m) := ⟨reprPrec ∘ Vector.toList⟩
 
 def permuteVector {α : Type} {n : ℕ} : Perm (Fin n) → Vector α n → Vector α n :=
   fun p v => {
@@ -260,8 +258,14 @@ def edge_sticker : Fin 12 → Fin 2 → RubiksSuperType → Color :=
 
 open Lean Widget
 
-def L8x3 : List (ℕ × ℕ) := (List.map (fun x => (x, 0)) (List.range 8)) ++ (List.map (fun x => (x, 1)) (List.range 8)) ++ (List.map (fun x => (x, 2)) (List.range 8))
-def L12x2 : List (ℕ × ℕ) := (List.map (fun x => (x, 0)) (List.range 12)) ++ (List.map (fun x => (x, 1)) (List.range 12))
+def L8x3 : List (ℕ × ℕ) :=
+  (List.map (fun x => (x, 0)) (List.range 8)) ++
+  (List.map (fun x => (x, 1)) (List.range 8)) ++
+  (List.map (fun x => (x, 2)) (List.range 8))
+
+def L12x2 : List (ℕ × ℕ) :=
+  (List.map (fun x => (x, 0)) (List.range 12)) ++
+  (List.map (fun x => (x, 1)) (List.range 12))
 
 def cubeStickerJson : RubiksSuperType → Json :=
   fun cube => Json.mkObj

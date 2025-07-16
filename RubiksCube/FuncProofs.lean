@@ -89,6 +89,3 @@ lemma corner_twist_unreachable: ¬ Reachable CornerTwist := by
   apply reachable_valid at h
   have h' : CornerTwist ∉ ValidCube := corner_twist_invalid
   contradiction
-
-
-#check Equiv.Perm.permGroup.mul_assoc
